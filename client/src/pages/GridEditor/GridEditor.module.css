@@ -1,0 +1,133 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.5rem 1.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.blobA,
+.blobB {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+.blobA {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(0, 184, 148, 0.12), transparent 70%);
+  top: -80px;
+  right: 0;
+}
+.blobB {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.1), transparent 70%);
+  bottom: -60px;
+  left: -60px;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back {
+  background: none;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  transition: background 150ms;
+  font-family: var(--font-body);
+}
+.back:hover { background: rgba(108, 99, 255, 0.08); }
+
+.headerCenter { text-align: center; }
+.headerRight  { width: 80px; }
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: #636e72;
+  margin-top: 2px;
+}
+
+/* ── Toolbar strip ── */
+.toolbarStrip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(108, 99, 255, 0.1);
+  flex-wrap: wrap;
+}
+
+/* ── Grid area ── */
+.gridArea {
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Footer ── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.chipOk {
+  background: rgba(0, 184, 148, 0.12);
+  color: #00b894;
+}
+
+.chipWarn {
+  background: rgba(225, 112, 85, 0.12);
+  color: #e17055;
+}

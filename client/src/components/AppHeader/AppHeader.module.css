@@ -1,0 +1,49 @@
+.brandBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.ambulanceIcon {
+  font-size: 2.1rem;
+  filter: drop-shadow(0 2px 8px rgba(108, 99, 255, 0.35));
+  animation: ambulanceBob 2.4s ease-in-out infinite;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brandTitle {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-secondary) 55%,
+    var(--color-success) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.brandSub {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #b2bec3;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@keyframes ambulanceBob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}

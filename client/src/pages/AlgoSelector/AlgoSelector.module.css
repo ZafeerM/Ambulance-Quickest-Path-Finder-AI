@@ -1,0 +1,244 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.5rem 1.5rem 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.blobA,
+.blobB {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+.blobA {
+  width: 440px;
+  height: 440px;
+  background: radial-gradient(circle, rgba(253, 121, 168, 0.13), transparent 70%);
+  top: -100px;
+  right: -80px;
+}
+.blobB {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.11), transparent 70%);
+  bottom: -60px;
+  left: -40px;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back {
+  background: none;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  transition: background 150ms;
+  font-family: var(--font-body);
+}
+.back:hover { background: rgba(108, 99, 255, 0.08); }
+
+.headerCenter { text-align: center; }
+.headerRight  { width: 80px; }
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.subtitle {
+  font-size: 0.85rem;
+  color: #636e72;
+  margin-top: 2px;
+}
+
+/* ── Algorithm cards ── */
+.algoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.algoCard {
+  position: relative;
+  background: rgba(255, 255, 255, 0.82);
+  border: 2px solid rgba(0, 0, 0, 0.07);
+  border-radius: var(--radius-md);
+  padding: 1.5rem 1.25rem 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 200ms ease;
+  font-family: var(--font-body);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+}
+
+.algoCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.algoCardSelected {
+  background: var(--ab, rgba(108, 99, 255, 0.08));
+  border-color: var(--ac, #6c63ff);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.selectedBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ac, #6c63ff);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.algoIcon  { font-size: 2.6rem; margin-bottom: 0.7rem; }
+
+.algoName {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.4rem;
+}
+
+.algoCardSelected .algoName { color: var(--ac, #6c63ff); }
+
+.algoDesc {
+  font-size: 0.8rem;
+  color: #636e72;
+  line-height: 1.55;
+}
+
+/* ── Parameters panel ── */
+.paramsPanel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--ac, #6c63ff);
+  transition: border-color 250ms;
+}
+
+.paramsTitle {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 1.1rem;
+}
+
+.paramBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.paramLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #636e72;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+
+.paramValue {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ac, #6c63ff);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sliderRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Radio chips */
+.radioRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.radioChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms;
+  color: #2d3436;
+}
+.radioChip input[type='radio'] { display: none; }
+.radioChip:hover { border-color: var(--ac, #6c63ff); }
+
+.radioChipActive {
+  background: var(--ac, #6c63ff);
+  border-color: var(--ac, #6c63ff);
+  color: #fff;
+}
+
+/* Range slider */
+.range {
+  width: 100%;
+  height: 5px;
+  accent-color: var(--ac, #6c63ff);
+  cursor: pointer;
+  appearance: auto;
+}
+
+/* ── CTA ── */
+.ctaRow {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}

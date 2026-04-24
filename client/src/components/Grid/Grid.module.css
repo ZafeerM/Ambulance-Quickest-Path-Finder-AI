@@ -1,0 +1,17 @@
+.wrapper {
+  overflow: auto;
+  max-width: 100%;
+  max-height: 68vh;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  background: #fff;
+  padding: 10px;
+  border: 1px solid rgba(108, 99, 255, 0.12);
+}
+
+.grid {
+  display: grid;
+  gap: 1px;
+  user-select: none;
+  width: fit-content;
+}

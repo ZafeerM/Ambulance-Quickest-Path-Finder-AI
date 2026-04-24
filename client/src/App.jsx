@@ -1,0 +1,19 @@
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
+import MapSetup from './pages/MapSetup/MapSetup';
+import GridEditor from './pages/GridEditor/GridEditor';
+import AlgoSelector from './pages/AlgoSelector/AlgoSelector';
+
+export default function App() {
+  return (
+    <AppProvider>
+      <Routes>
+        <Route path="/"          element={<MapSetup />}    />
+        <Route path="/grid"      element={<GridEditor />}  />
+        <Route path="/algorithm" element={<AlgoSelector />} />
+        <Route path="*"          element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppProvider>
+  );
+}

@@ -1,0 +1,48 @@
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cell-empty);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  cursor: crosshair;
+  transition: filter 80ms;
+  user-select: none;
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.cell:hover {
+  filter: brightness(0.88);
+  z-index: 1;
+  position: relative;
+}
+
+/* ── Cell type classes ── */
+.road     { background: var(--cell-road); }
+.obstacle { background: var(--cell-obstacle); border-color: rgba(255, 255, 255, 0.04); }
+
+.start {
+  background: var(--cell-start);
+  animation: pulse-start 2s ease-in-out infinite;
+}
+
+.end {
+  background: var(--cell-end);
+  animation: pulse-end 2.4s ease-in-out infinite;
+}
+
+.icon {
+  pointer-events: none;
+  line-height: 1;
+  display: block;
+}
+
+@keyframes pulse-start {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 184, 148, 0.5); }
+  50%       { box-shadow: 0 0 0 4px rgba(0, 184, 148, 0); }
+}
+
+@keyframes pulse-end {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(225, 112, 85, 0.5); }
+  50%       { box-shadow: 0 0 0 4px rgba(225, 112, 85, 0); }
+}
