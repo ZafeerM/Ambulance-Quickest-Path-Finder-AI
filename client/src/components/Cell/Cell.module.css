@@ -23,12 +23,27 @@
 }
 
 /* ── Original cell types ── */
-.road     { background: var(--cell-road); }
-.obstacle { background: var(--cell-obstacle); border-color: rgba(255, 255, 255, 0.04); }
+.road {
+  background-color: var(--cell-road); /* fallback while image loads */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.obstacle {
+  background-color: var(--cell-obstacle);
+  border-color: rgba(255, 255, 255, 0.04);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 
 .roadTraffic {
-  background: #e67e22;
+  background-color: #e67e22; /* fallback / shows through any PNG transparency */
   border-color: rgba(0, 0, 0, 0.15);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .start {

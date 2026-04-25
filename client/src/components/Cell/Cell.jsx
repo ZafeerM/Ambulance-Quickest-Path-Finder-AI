@@ -1,6 +1,16 @@
 import React from 'react';
 import { CELL_TYPES, CELL_ICONS } from '../../constants/cellTypes';
 import styles from './Cell.module.css';
+import wallImg    from '../../../assets/wall.jpg';
+import roadImg    from '../../../assets/road.jpg';
+import trafficImg from '../../../assets/traffic.jpg';
+
+// Cells whose background is a full-cover image instead of a solid colour
+const BG_IMAGES = {
+  [CELL_TYPES.OBSTACLE]:     wallImg,
+  [CELL_TYPES.ROAD]:         roadImg,
+  [CELL_TYPES.ROAD_TRAFFIC]: trafficImg,
+};
 
 export default function Cell({
   value,
@@ -23,16 +33,23 @@ export default function Cell({
     [CELL_TYPES.PATH]:         styles.path,
   }[value] ?? '';
 
+  const bgImg = BG_IMAGES[value];
+  // Suppress emoji icons on cells that have a background image
+  const icon = !bgImg ? CELL_ICONS[value] : null;
+
   return (
     <div
       className={`${styles.cell} ${typeClass} ${readOnly ? styles.readOnly : ''}`}
-      style={{ width: cellSize, height: cellSize, fontSize: cellSize * 0.48 }}
+      style={{
+        width: cellSize,
+        height: cellSize,
+        fontSize: cellSize * 0.48,
+        ...(bgImg && { backgroundImage: `url(${bgImg})` }),
+      }}
       onMouseDown={readOnly ? undefined : () => onMouseDown(row, col)}
       onMouseEnter={readOnly ? undefined : () => onMouseEnter(row, col)}
     >
-      {CELL_ICONS[value] && (
-        <span className={styles.icon}>{CELL_ICONS[value]}</span>
-      )}
+      {icon && <span className={styles.icon}>{icon}</span>}
     </div>
   );
 }

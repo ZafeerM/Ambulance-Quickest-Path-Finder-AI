@@ -42,6 +42,15 @@ export function AppProvider({ children }) {
     setGrid(createEmptyGrid(rows, cols));
   }, [rows, cols]);
 
+  /** Load a pre-built 2-D grid; resizes rows/cols to match the array */
+  const loadGrid = useCallback((newGrid) => {
+    const r = newGrid.length;
+    const c = newGrid[0]?.length ?? 0;
+    setRows(r);
+    setCols(c);
+    setGrid(newGrid);
+  }, []);
+
   /** Switch algorithm and reset params to their defaults */
   const changeAlgo = useCallback((algo) => {
     setSelectedAlgo(algo);
@@ -62,6 +71,7 @@ export function AppProvider({ children }) {
         setCell,
         clearGrid,
         initGrid,
+        loadGrid,
         selectedAlgo,
         algoParams,
         changeAlgo,

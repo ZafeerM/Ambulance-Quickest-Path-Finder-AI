@@ -131,3 +131,41 @@
   background: rgba(225, 112, 85, 0.12);
   color: #e17055;
 }
+
+/* ── Save / Load map buttons ── */
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mapBtn {
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid rgba(108, 99, 255, 0.25);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a2e;
+  transition: background 150ms, border-color 150ms, box-shadow 150ms;
+  backdrop-filter: blur(8px);
+}
+
+.mapBtn:hover {
+  background: rgba(108, 99, 255, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(108, 99, 255, 0.15);
+}
+
+.loadError {
+  width: 100%;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e17055;
+  padding-top: 2px;
+}
