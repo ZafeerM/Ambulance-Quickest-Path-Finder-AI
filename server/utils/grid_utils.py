@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # ---------------------------------------------------------------------------
 # Grid value constants — must stay in sync with client/src/constants/cellTypes.js
 # ---------------------------------------------------------------------------
