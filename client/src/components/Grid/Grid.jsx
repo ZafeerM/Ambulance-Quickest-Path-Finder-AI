@@ -3,8 +3,10 @@ import Cell from '../Cell/Cell';
 import { useGridInteraction } from '../../hooks/useGridInteraction';
 import styles from './Grid.module.css';
 
-export default function Grid({ grid, activeTool }) {
-  const { handleMouseDown, handleMouseEnter } = useGridInteraction(activeTool);
+export default function Grid({ grid, activeTool, readOnly = false }) {
+  const { handleMouseDown, handleMouseEnter } = useGridInteraction(
+    readOnly ? null : activeTool,
+  );
 
   const rows = grid.length;
   const cols = grid[0]?.length ?? 0;
@@ -29,6 +31,7 @@ export default function Grid({ grid, activeTool }) {
               cellSize={cellSize}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
+              readOnly={readOnly}
             />
           )),
         )}

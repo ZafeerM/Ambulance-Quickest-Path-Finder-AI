@@ -4,10 +4,10 @@ import styles from './Toolbar.module.css';
 
 const TOOLS = [
   CELL_TYPES.ROAD,
-  CELL_TYPES.OBSTACLE,
+  CELL_TYPES.ROAD_TRAFFIC,
   CELL_TYPES.START,
   CELL_TYPES.END,
-  CELL_TYPES.EMPTY,   // last = eraser
+  CELL_TYPES.EMPTY,   // last = eraser (reverts cell to wall)
 ];
 
 export default function Toolbar({ activeTool, onToolChange }) {

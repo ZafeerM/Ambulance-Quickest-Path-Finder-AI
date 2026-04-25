@@ -8,7 +8,6 @@ import {
   ALGORITHM_LABELS,
   ALGORITHM_DESCRIPTIONS,
 } from '../../constants/cellTypes';
-import { gridToPayload } from '../../utils/gridUtils';
 import AppHeader from '../../components/AppHeader/AppHeader';
 import styles from './AlgoSelector.module.css';
 
@@ -143,12 +142,7 @@ export default function AlgoSelector() {
   }
 
   const handleRun = () => {
-    const payload = gridToPayload(grid, rows, cols, selectedAlgo, algoParams);
-    // TODO: replace with actual fetch() call once backend is ready
-    console.log('Payload for backend:', JSON.stringify(payload, null, 2));
-    alert(
-      `Payload ready!\nAlgorithm: ${ALGORITHM_LABELS[selectedAlgo]}\n(See console for full JSON)`,
-    );
+    navigate('/visualizer');
   };
 
   return (

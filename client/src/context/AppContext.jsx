@@ -25,11 +25,11 @@ export function AppProvider({ children }) {
 
       if (type === CELL_TYPES.START) {
         const existing = findCell(next, CELL_TYPES.START);
-        if (existing) next[existing.row][existing.col] = CELL_TYPES.EMPTY;
+        if (existing) next[existing.row][existing.col] = CELL_TYPES.OBSTACLE;
       }
       if (type === CELL_TYPES.END) {
         const existing = findCell(next, CELL_TYPES.END);
-        if (existing) next[existing.row][existing.col] = CELL_TYPES.EMPTY;
+        if (existing) next[existing.row][existing.col] = CELL_TYPES.OBSTACLE;
       }
 
       next[row][col] = type;

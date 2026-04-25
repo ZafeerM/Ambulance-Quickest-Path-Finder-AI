@@ -1,8 +1,8 @@
 import { CELL_TYPES } from '../constants/cellTypes';
 
-/** Create a rows×cols 2D array filled with EMPTY (0) */
+/** Create a rows×cols 2D array filled with OBSTACLE (wall) — no empty cells */
 export function createEmptyGrid(rows, cols) {
-  return Array.from({ length: rows }, () => Array(cols).fill(CELL_TYPES.EMPTY));
+  return Array.from({ length: rows }, () => Array(cols).fill(CELL_TYPES.OBSTACLE));
 }
 
 /** Shallow-clone a 2D grid (rows are new arrays, values are primitives) */
