@@ -67,9 +67,9 @@ function LocalParams({ params, onChange }) {
       <input
         type="range"
         className={styles.range}
-        min={100}
-        max={10000}
-        step={100}
+        min={10}
+        max={200}
+        step={10}
         value={params.maxIterations}
         onChange={(e) => onChange('maxIterations', parseInt(e.target.value, 10))}
       />

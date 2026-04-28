@@ -92,7 +92,7 @@ export const DEFAULT_ALGO_PARAMS = Object.freeze({
     heuristic: 'manhattan',
   },
   [ALGORITHMS.LOCAL_SEARCH]: {
-    maxIterations: 1000,
+    maxIterations: 100,
   },
   [ALGORITHMS.GENETIC]: {
     populationSize: 100,

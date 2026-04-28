@@ -30,6 +30,7 @@ from pydantic import ValidationError
 from config import settings
 from schemas import GridPayload, WSMessage
 from services.astar import astar_steps
+from services.hill_climbing import hill_climbing_steps
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -120,14 +121,16 @@ async def apply_ai(websocket: WebSocket):
             if algorithm == "astar":
                 heuristic = str(payload.params.get("heuristic", "manhattan")).lower()
                 generator = astar_steps(payload.grid, heuristic)                        # Call the Astar Service
-
+            elif algorithm == "local_search":
+                max_iter = int(payload.params.get("maxIterations", 1000))
+                generator = hill_climbing_steps(payload.grid, max_iter)                 # Call the Hill Climbing Service
             else:
                 await _send(
                     websocket,
                     "error",
                     payload.grid,
                     f"Algorithm '{algorithm}' is not yet implemented. "
-                    "Currently supported: 'astar'.",
+                    "Currently supported: 'astar', 'local_search'.",
                 )
                 continue
 
@@ -136,9 +139,11 @@ async def apply_ai(websocket: WebSocket):
                 await _send(websocket, msg_type, grid_state, message)
 
                 if msg_type == "step":
-                    # Yield control to the event loop so the message is flushed
-                    # before the next iteration, and respect the configured delay.
-                    await asyncio.sleep(settings.step_delay_seconds)
+                    # A* uses a fixed delay so the frontend can watch cell-by-cell.
+                    # Hill climbing streams many frames quickly — no delay needed;
+                    # the frontend buffer drives playback speed.
+                    if algorithm == "astar":
+                        await asyncio.sleep(settings.step_delay_seconds)
                 elif msg_type in ("done", "error"):
                     # Final message sent — stop iterating this run.
                     break
