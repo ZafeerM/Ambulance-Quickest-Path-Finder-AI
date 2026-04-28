@@ -48,10 +48,10 @@ export const CELL_COLORS = Object.freeze({
   [CELL_TYPES.END]:          '#e17055',
   [CELL_TYPES.ROAD_TRAFFIC]: '#e67e22',  // orange — slow / congested
   // Overlay colors from server
-  [CELL_TYPES.VISITED]:  '#b2bec3',   // grey   — explored
-  [CELL_TYPES.FRONTIER]: '#fdcb6e',   // amber  — on the frontier
-  [CELL_TYPES.CURRENT]:  '#a29bfe',   // purple — currently being examined
-  [CELL_TYPES.PATH]:     '#fd79a8',   // pink   — final path
+  [CELL_TYPES.VISITED]:  '#00cec9',   // electric cyan  — explored
+  [CELL_TYPES.FRONTIER]: '#e67e00',   // deep orange    — on the frontier
+  [CELL_TYPES.CURRENT]:  '#6c5ce7',   // electric violet — currently being examined
+  [CELL_TYPES.PATH]:     '#e84393',   // neon magenta   — final path
 });
 
 // Color used in the toolbar button for each tool

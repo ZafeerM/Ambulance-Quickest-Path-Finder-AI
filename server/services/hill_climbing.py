@@ -8,7 +8,8 @@ Lab → Grid mapping
 ------------------
   state            →  complete valid path from START to END (list of cells)
   calculate_conflicts  →  _path_cost(): sum of TRAVERSAL_COST for every cell
-  get_neighbors    →  _get_neighbours(): single-cell-swap while keeping adjacency
+  get_neighbors    →  _get_neighbours(): segment-replacement (pick two path indices,
+                       find alt BFS route between them avoiding current segment)
   break on first   →  first-improvement: move to the first neighbour with lower cost
 
 On local optimum (no improvement found):
@@ -63,11 +64,6 @@ def _path_cost(grid: Grid, path: list[Node]) -> float:
     return sum(TRAVERSAL_COST.get(grid[r][c], 1.0) for r, c in path)
 
 
-def _adjacent(a: Node, b: Node) -> bool:
-    """True if two cells are exactly one step apart (4-connectivity)."""
-    return abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1
-
-
 # ── Initial path (BFS — deterministic, finds shortest) ────────────────────────
 
 def _bfs_path(
@@ -94,50 +90,79 @@ def _bfs_path(
     return None
 
 
-# ── Random path (random walk — O(N), no backtracking) ────────────────────────
+# ── Random path (randomised BFS — always finds a path, always different) ─────
 
-def _random_dfs_path(
+def _random_bfs_path(
     grid: Grid, start: Node, end: Node, rows: int, cols: int
 ) -> list[Node] | None:
     """
-    Random walk WITHOUT backtracking — O(N) guaranteed.
+    Randomised BFS for random restarts.
 
-    At each step, picks a random unvisited traversable neighbour.
-    If no unvisited neighbour exists the walk is stuck and returns None;
-    the caller falls back to BFS.
-
-    The old backtracking DFS removed cells from 'visited' when unwinding,
-    allowing exponential re-exploration on fully open grids — this caused
-    the server to hang indefinitely on obstacle-free maps.
+    Shuffles the neighbour list before enqueuing at every expansion, so each
+    call explores the grid in a different order and produces a genuinely
+    different path.  Unlike the old random-walk DFS, BFS always finds a path
+    when one exists — it never gets stuck — so the BFS fallback is unnecessary.
     """
-    visited: set[Node] = {start}
-    path: list[Node] = [start]
-    current = start
+    queue: deque[tuple[Node, list[Node]]] = deque([(start, [start])])
+    seen: set[Node] = {start}
+    while queue:
+        current, path = queue.popleft()
+        dirs = list(_DIRECTIONS)
+        random.shuffle(dirs)
+        for dr, dc in dirs:
+            nr, nc = current[0] + dr, current[1] + dc
+            nb: Node = (nr, nc)
+            if (
+                0 <= nr < rows
+                and 0 <= nc < cols
+                and nb not in seen
+                and grid[nr][nc] not in IMPASSABLE
+            ):
+                seen.add(nb)
+                new_path = path + [nb]
+                if nb == end:
+                    return new_path
+                queue.append((nb, new_path))
+    return None
 
-    while current != end:
-        neighbours: list[Node] = []
+
+
+# ── BFS with exclusion set (used by segment-replacement neighbours) ───────────
+
+def _bfs_avoiding(
+    grid: Grid,
+    start: Node,
+    end: Node,
+    rows: int,
+    cols: int,
+    excluded: set[Node],
+) -> list[Node] | None:
+    """
+    Standard BFS that treats every cell in *excluded* as impassable.
+    The start and end cells are never blocked even if present in the set.
+    """
+    if start == end:
+        return [start]
+    queue: deque[tuple[Node, list[Node]]] = deque([(start, [start])])
+    seen: set[Node] = {start}
+    while queue:
+        current, path = queue.popleft()
         for dr, dc in _DIRECTIONS:
             nr, nc = current[0] + dr, current[1] + dc
             nb: Node = (nr, nc)
             if (
                 0 <= nr < rows
                 and 0 <= nc < cols
-                and nb not in visited
+                and nb not in seen
+                and nb not in excluded
                 and grid[nr][nc] not in IMPASSABLE
             ):
-                neighbours.append(nb)
-
-        if not neighbours:
-            return None  # stuck — caller falls back to BFS
-
-        random.shuffle(neighbours)
-        nxt = neighbours[0]
-        visited.add(nxt)
-        path.append(nxt)
-        current = nxt
-
-    return path
-
+                seen.add(nb)
+                new_path = path + [nb]
+                if nb == end:
+                    return new_path
+                queue.append((nb, new_path))
+    return None
 
 
 # ── Neighbour generation ───────────────────────────────────────────────────────
@@ -146,46 +171,56 @@ def _get_neighbours(
     grid: Grid, path: list[Node], rows: int, cols: int
 ) -> list[list[Node]]:
     """
-    Single-cell-swap neighbours (analogous to get_neighbors in the lab).
+    Segment-replacement neighbours.
 
-    For each intermediate cell path[i] (not start or end):
-      - Try replacing it with each of its 4 adjacent cells N
-      - N is valid only if:
-          1. N is in bounds
-          2. N is traversable (not in IMPASSABLE)
-          3. N is adjacent to path[i-1]  ← preserves path connectivity
-          4. N is adjacent to path[i+1]  ← preserves path connectivity
-          5. N is not already in the path ← prevents cycles
+    Samples random index pairs (i, j) with i < j from the path and finds an
+    alternative BFS route between path[i] and path[j] that avoids:
+      - the current segment interior  path[i+1 .. j-1]  (forces a detour)
+      - all other cells already in the path              (prevents cycles)
 
-    The neighbours list is shuffled so first-improvement doesn't always
-    favour the same direction.
+    This is essential for large grids: the old single-cell-swap required the
+    replacement cell to be adjacent to BOTH its neighbours in the path, which
+    is only possible at bends.  A BFS shortest path is mostly straight, so
+    the old approach returned zero valid neighbours immediately and the
+    algorithm was permanently stuck after the first iteration.
     """
+    if len(path) <= 2:
+        return []
+
     neighbours: list[list[Node]] = []
-    path_set: set[Node] = set(path)
+    path_len = len(path)
 
-    for i in range(1, len(path) - 1):
-        prev_cell = path[i - 1]
-        next_cell = path[i + 1]
+    # Scale the number of segment pairs tried with path length
+    num_samples = min(60, max(20, path_len // 2))
+    tried: set[tuple[int, int]] = set()
+    attempts = 0
 
-        for dr, dc in _DIRECTIONS:
-            nr, nc = path[i][0] + dr, path[i][1] + dc
-            new_cell: Node = (nr, nc)
+    while attempts < num_samples * 4 and len(neighbours) < num_samples:
+        attempts += 1
 
-            if not (0 <= nr < rows and 0 <= nc < cols):
-                continue
-            if grid[nr][nc] in IMPASSABLE:
-                continue
-            if new_cell == path[i]:
-                continue
-            if not _adjacent(prev_cell, new_cell) or not _adjacent(new_cell, next_cell):
-                continue
-            if new_cell in path_set:
-                continue
+        i = random.randint(0, path_len - 3)
+        # Prefer shorter segments (higher chance of alt route) but allow longer
+        max_j = min(path_len - 1, i + max(4, path_len // 5))
+        j = random.randint(i + 2, max_j)
 
-            new_path = path[:i] + [new_cell] + path[i + 1:]
-            neighbours.append(new_path)
+        if (i, j) in tried:
+            continue
+        tried.add((i, j))
 
-    random.shuffle(neighbours)  # randomise order so first-improvement explores evenly
+        # Cells the alternative must avoid to prevent re-using the current
+        # segment or creating a cycle with the rest of the path
+        segment_interior = set(path[i + 1:j])
+        other_path_cells  = (set(path[:i]) | set(path[j + 1:])) - {path[i], path[j]}
+        excluded = segment_interior | other_path_cells
+
+        alt = _bfs_avoiding(grid, path[i], path[j], rows, cols, excluded)
+        if alt is None or alt == path[i:j + 1]:
+            continue
+
+        new_path = path[:i] + alt + path[j + 1:]
+        neighbours.append(new_path)
+
+    random.shuffle(neighbours)
     return neighbours
 
 
@@ -222,9 +257,9 @@ def hill_climbing_steps(
 
     State      = complete valid path from START → END (list of Nodes)
     Cost       = sum of TRAVERSAL_COST[cell] for every cell in the path
-    Neighbour  = path with one intermediate cell swapped (adjacency preserved)
+    Neighbour  = path with one segment replaced by an alternative BFS route
     Strategy   = first-improvement: move to the FIRST neighbour with lower cost
-    On stuck   = random restart via randomised DFS; always track global best
+    On stuck   = random restart via randomised BFS; always track global best
     """
     rows = len(grid)
     cols = len(grid[0]) if rows > 0 else 0
@@ -326,7 +361,7 @@ def hill_climbing_steps(
             )
 
             # ── Random restart ────────────────────────────────────────────────
-            new_path = _random_dfs_path(grid, start, end, rows, cols)
+            new_path = _random_bfs_path(grid, start, end, rows, cols)
             if new_path is None:
                 new_path = _bfs_path(grid, start, end, rows, cols)
 

@@ -58,17 +58,17 @@
 
 /* ── Overlay types (streamed from server) ── */
 .visited {
-  background: #b2bec3;
-  opacity: 0.75;
+  background: #00cec9;
+  opacity: 0.85;
 }
 
 .frontier {
-  background: #fdcb6e;
+  background: #e67e00;
   animation: pop-in 200ms ease;
 }
 
 .current {
-  background: #a29bfe;
+  background: #6c5ce7;
   animation: current-pulse 0.6s ease-in-out infinite;
   z-index: 1;
   position: relative;
@@ -76,7 +76,7 @@
 }
 
 .path {
-  background: #fd79a8;
+  background: #e84393;
   animation: path-appear 300ms ease;
   border-radius: 3px;
 }
@@ -99,8 +99,8 @@
 }
 
 @keyframes current-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(162, 155, 254, 0.8); }
-  50%       { box-shadow: 0 0 0 5px rgba(162, 155, 254, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.8); }
+  50%       { box-shadow: 0 0 0 5px rgba(108, 92, 231, 0); }
 }
 
 @keyframes pop-in {
