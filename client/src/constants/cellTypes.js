@@ -95,9 +95,9 @@ export const DEFAULT_ALGO_PARAMS = Object.freeze({
     maxIterations: 100,
   },
   [ALGORITHMS.GENETIC]: {
-    populationSize: 100,
-    generations: 200,
-    mutationRate: 0.05,
+    populationSize: 20,
+    generations: 50,
+    mutationRate: 0.10,
   },
 });
 

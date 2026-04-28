@@ -31,6 +31,7 @@ from config import settings
 from schemas import GridPayload, WSMessage
 from services.astar import astar_steps
 from services.hill_climbing import hill_climbing_steps
+from services.genetic import genetic_steps
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -124,13 +125,18 @@ async def apply_ai(websocket: WebSocket):
             elif algorithm == "local_search":
                 max_iter = int(payload.params.get("maxIterations", 1000))
                 generator = hill_climbing_steps(payload.grid, max_iter)                 # Call the Hill Climbing Service
+            elif algorithm == "genetic":
+                pop_size      = int(payload.params.get("populationSize", 100))
+                gens          = int(payload.params.get("generations", 200))
+                mutation_rate = float(payload.params.get("mutationRate", 0.05))
+                generator = genetic_steps(payload.grid, pop_size, gens, mutation_rate)  # Call the Genetic Algorithm Service
             else:
                 await _send(
                     websocket,
                     "error",
                     payload.grid,
                     f"Algorithm '{algorithm}' is not yet implemented. "
-                    "Currently supported: 'astar', 'local_search'.",
+                    "Currently supported: 'astar', 'local_search', 'genetic'.",
                 )
                 continue
 
