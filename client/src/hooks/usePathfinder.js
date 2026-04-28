@@ -123,6 +123,7 @@ export function usePathfinder() {
       ws.onopen = () => {
         setStatus('receiving');
         const payload = gridToPayload(grid, rows, cols, algorithm, algoParams);
+        console.log('[usePathfinder] Sending payload:', payload);
         ws.send(JSON.stringify(payload));
       };
 

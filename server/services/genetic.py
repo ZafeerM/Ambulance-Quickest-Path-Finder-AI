@@ -40,6 +40,7 @@ from utils.grid_utils import (
     PATH,
     VISITED,
     FRONTIER,
+    CURRENT,
     TRAVERSAL_COST,
     find_cell,
     clone_grid,
@@ -92,49 +93,44 @@ def _random_dfs_path(
     grid: Grid, start: Node, end: Node, rows: int, cols: int
 ) -> list[Node] | None:
     """
-    Iterative random DFS with backtracking.
-    Produces diverse paths for population variety.
-    Iterative (not recursive) to avoid Python's default recursion limit on large grids.
+    Random walk WITHOUT backtracking — O(N) guaranteed.
+
+    At each step, picks a random unvisited traversable neighbour.
+    If no unvisited neighbour exists the walk is stuck and returns None;
+    the caller falls back to BFS.
+
+    The old backtracking DFS removed cells from 'visited' when unwinding,
+    allowing exponential re-exploration on fully open grids — this caused
+    the server to hang indefinitely on obstacle-free maps.
     Analogous to create_random_schedule() in the lab.
     """
-    start_dirs = list(_DIRECTIONS)
-    random.shuffle(start_dirs)
-    # Stack frame: (current_cell, shuffled_directions, next_direction_index)
-    stack: list[tuple[Node, list[tuple[int, int]], int]] = [(start, start_dirs, 0)]
-    path: list[Node] = [start]
     visited: set[Node] = {start}
+    path: list[Node] = [start]
+    current = start
 
-    while stack:
-        current, dirs, dir_idx = stack[-1]
+    while current != end:
+        neighbours: list[Node] = []
+        for dr, dc in _DIRECTIONS:
+            nr, nc = current[0] + dr, current[1] + dc
+            nb: Node = (nr, nc)
+            if (
+                0 <= nr < rows
+                and 0 <= nc < cols
+                and nb not in visited
+                and grid[nr][nc] not in IMPASSABLE
+            ):
+                neighbours.append(nb)
 
-        if current == end:
-            return list(path)
+        if not neighbours:
+            return None  # stuck — caller falls back to BFS
 
-        if dir_idx >= len(dirs):
-            stack.pop()
-            if len(path) > 1:
-                cell = path.pop()
-                visited.discard(cell)
-            continue
+        random.shuffle(neighbours)
+        nxt = neighbours[0]
+        visited.add(nxt)
+        path.append(nxt)
+        current = nxt
 
-        stack[-1] = (current, dirs, dir_idx + 1)
-
-        dr, dc = dirs[dir_idx]
-        nr, nc = current[0] + dr, current[1] + dc
-        nb: Node = (nr, nc)
-        if (
-            0 <= nr < rows
-            and 0 <= nc < cols
-            and nb not in visited
-            and grid[nr][nc] not in IMPASSABLE
-        ):
-            visited.add(nb)
-            path.append(nb)
-            new_dirs = list(_DIRECTIONS)
-            random.shuffle(new_dirs)
-            stack.append((nb, new_dirs, 0))
-
-    return None
+    return path
 
 
 def _make_path(grid: Grid, start: Node, end: Node, rows: int, cols: int) -> list[Node] | None:
@@ -240,28 +236,30 @@ def _build_cloud_grid(
     population: list[list[Node]],
     best_path: list[Node],
     pop_size: int,
+    champion_color: int | None = CURRENT,
 ) -> Grid:
     """
     Build a frequency-heat overlay for the entire population.
 
     Frequency tiers (drawn bottom → top so hotter layers always win):
-      any path visited   →  VISITED  (blue  — explored zone)
-      ≥ 50 % of paths    →  FRONTIER (orange — convergence zone)
-      best individual    →  CURRENT  (bright — current champion)
+      any path visited          →  VISITED  (grey  — explored zone)
+      ≥ 50 % of paths           →  FRONTIER (orange — convergence zone)
+      champion (if requested)   →  champion_color (purple during steps,
+                                                    omitted on the info frame)
       START / END never overwritten.
 
-    The result lets the viewer watch the population "cloud" shrink
-    and converge on the optimal route across generations.
+    Pass champion_color=None to suppress the champion overlay (gen 0 info frame).
+    Pass champion_color=CURRENT for step frames (purple = still evolving).
+    The done frame uses build_path_grid directly so PATH (pink) only appears there.
     """
-    # Count how many population paths pass through each cell
     freq: dict[Node, int] = {}
     for path in population:
         for cell in path:
             freq[cell] = freq.get(cell, 0) + 1
 
-    visual    = clone_grid(grid)
-    protected = {START, END}
-    hot_threshold = pop_size * 0.5   # ≥ 50 % of the population
+    visual        = clone_grid(grid)
+    protected     = {START, END}
+    hot_threshold = pop_size * 0.5
 
     # Layer 1 — cool zone: any cell touched by at least one path
     for (r, c), _ in freq.items():
@@ -273,11 +271,11 @@ def _build_cloud_grid(
         if count >= hot_threshold and visual[r][c] not in protected:
             visual[r][c] = FRONTIER
 
-    # Layer 3 — champion: best individual's path drawn on top
-    # Use PATH (green) so the evolving champion looks like the final answer forming.
-    for r, c in best_path:
-        if visual[r][c] not in protected:
-            visual[r][c] = PATH
+    # Layer 3 — champion: drawn only when a color is specified
+    if champion_color is not None:
+        for r, c in best_path:
+            if visual[r][c] not in protected:
+                visual[r][c] = champion_color
 
     return visual
 
@@ -350,7 +348,9 @@ def genetic_steps(
             init_freq[cell] = init_freq.get(cell, 0) + 1
     init_hot = sum(1 for c in init_freq.values() if c >= population_size * 0.5)
 
-    yield _build_cloud_grid(grid, population, best_path, population_size), "info", (
+    # Gen-0 info frame: show only the initial population cloud — no champion
+    # overlay yet, so the pink final-answer colour is never shown from frame 0.
+    yield _build_cloud_grid(grid, population, best_path, population_size, champion_color=None), "info", (
         f"🧬 GENETIC ALGORITHM — GEN 0 / {generations}\n"
         f"   {_progress_bar(0, generations)}\n"
         f"   Start  : {start}   End  : {end}   Grid : {rows}×{cols}\n"
@@ -412,8 +412,9 @@ def genetic_steps(
         hot_cells   = sum(1 for cnt in cloud_freq.values() if cnt >= population_size * 0.5)
         improve_tag = "✅ IMPROVED!" if marker == "✅" else "·"
 
-        # Stream one frame per generation — population cloud + best individual
-        yield _build_cloud_grid(grid, population, best_path, population_size), "step", (
+        # Stream one frame per generation — cloud + champion in purple (CURRENT).
+        # Purple signals "best so far, still evolving"; pink (PATH) only on done.
+        yield _build_cloud_grid(grid, population, best_path, population_size, champion_color=CURRENT), "step", (
             f"🧬 GENETIC ALGORITHM — GEN {generation:{gen_width}} / {generations}   {improve_tag}\n"
             f"   {_progress_bar(generation, generations)}\n"
             f"   Gen best cost    : {gen_best_cost:.1f}\n"

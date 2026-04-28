@@ -94,58 +94,50 @@ def _bfs_path(
     return None
 
 
-# ── Random path (iterative DFS — avoids Python recursion limit) ───────────────
+# ── Random path (random walk — O(N), no backtracking) ────────────────────────
 
 def _random_dfs_path(
     grid: Grid, start: Node, end: Node, rows: int, cols: int
 ) -> list[Node] | None:
     """
-    Iterative random DFS with backtracking.
-    Produces a different (often longer) path than BFS, enabling genuine restarts.
-    Iterative to avoid Python's default recursion limit on large grids.
+    Random walk WITHOUT backtracking — O(N) guaranteed.
+
+    At each step, picks a random unvisited traversable neighbour.
+    If no unvisited neighbour exists the walk is stuck and returns None;
+    the caller falls back to BFS.
+
+    The old backtracking DFS removed cells from 'visited' when unwinding,
+    allowing exponential re-exploration on fully open grids — this caused
+    the server to hang indefinitely on obstacle-free maps.
     """
-    start_dirs = list(_DIRECTIONS)
-    random.shuffle(start_dirs)
-    # Stack frame: (current_cell, shuffled_directions_list, next_direction_index)
-    stack: list[tuple[Node, list[tuple[int, int]], int]] = [(start, start_dirs, 0)]
-    path: list[Node] = [start]
     visited: set[Node] = {start}
+    path: list[Node] = [start]
+    current = start
 
-    while stack:
-        current, dirs, dir_idx = stack[-1]
+    while current != end:
+        neighbours: list[Node] = []
+        for dr, dc in _DIRECTIONS:
+            nr, nc = current[0] + dr, current[1] + dc
+            nb: Node = (nr, nc)
+            if (
+                0 <= nr < rows
+                and 0 <= nc < cols
+                and nb not in visited
+                and grid[nr][nc] not in IMPASSABLE
+            ):
+                neighbours.append(nb)
 
-        # ── Goal reached ──────────────────────────────────────────────────────
-        if current == end:
-            return list(path)
+        if not neighbours:
+            return None  # stuck — caller falls back to BFS
 
-        # ── All directions from this cell exhausted → backtrack ───────────────
-        if dir_idx >= len(dirs):
-            stack.pop()
-            if len(path) > 1:
-                cell = path.pop()
-                visited.discard(cell)
-            continue
+        random.shuffle(neighbours)
+        nxt = neighbours[0]
+        visited.add(nxt)
+        path.append(nxt)
+        current = nxt
 
-        # Advance direction index for the next visit to this frame
-        stack[-1] = (current, dirs, dir_idx + 1)
+    return path
 
-        dr, dc = dirs[dir_idx]
-        nr, nc = current[0] + dr, current[1] + dc
-        nb: Node = (nr, nc)
-
-        if (
-            0 <= nr < rows
-            and 0 <= nc < cols
-            and nb not in visited
-            and grid[nr][nc] not in IMPASSABLE
-        ):
-            visited.add(nb)
-            path.append(nb)
-            new_dirs = list(_DIRECTIONS)
-            random.shuffle(new_dirs)
-            stack.append((nb, new_dirs, 0))
-
-    return None  # no path found from this random walk
 
 
 # ── Neighbour generation ───────────────────────────────────────────────────────
