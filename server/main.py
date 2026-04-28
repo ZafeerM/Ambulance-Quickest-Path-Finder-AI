@@ -144,13 +144,7 @@ async def apply_ai(websocket: WebSocket):
             for grid_state, msg_type, message in generator:
                 await _send(websocket, msg_type, grid_state, message)
 
-                if msg_type == "step":
-                    # A* uses a fixed delay so the frontend can watch cell-by-cell.
-                    # Hill climbing streams many frames quickly — no delay needed;
-                    # the frontend buffer drives playback speed.
-                    if algorithm == "astar":
-                        await asyncio.sleep(settings.step_delay_seconds)
-                elif msg_type in ("done", "error"):
+                if msg_type in ("done", "error"):
                     # Final message sent — stop iterating this run.
                     break
 
