@@ -89,54 +89,43 @@ def _bfs_path(
     return None
 
 
-def _random_dfs_path(
+def _random_bfs_path(
     grid: Grid, start: Node, end: Node, rows: int, cols: int
 ) -> list[Node] | None:
     """
-    Random walk WITHOUT backtracking — O(N) guaranteed.
+    Randomised BFS — shuffles neighbours before enqueuing at every expansion.
 
-    At each step, picks a random unvisited traversable neighbour.
-    If no unvisited neighbour exists the walk is stuck and returns None;
-    the caller falls back to BFS.
-
-    The old backtracking DFS removed cells from 'visited' when unwinding,
-    allowing exponential re-exploration on fully open grids — this caused
-    the server to hang indefinitely on obstacle-free maps.
+    Always finds a path when one exists (never gets stuck unlike the old random
+    walk), and produces a genuinely different route on each call because the
+    expansion order is shuffled.  This gives the GA real population diversity.
     Analogous to create_random_schedule() in the lab.
     """
-    visited: set[Node] = {start}
-    path: list[Node] = [start]
-    current = start
-
-    while current != end:
-        neighbours: list[Node] = []
-        for dr, dc in _DIRECTIONS:
+    queue: deque[tuple[Node, list[Node]]] = deque([(start, [start])])
+    seen: set[Node] = {start}
+    while queue:
+        current, path = queue.popleft()
+        dirs = list(_DIRECTIONS)
+        random.shuffle(dirs)
+        for dr, dc in dirs:
             nr, nc = current[0] + dr, current[1] + dc
             nb: Node = (nr, nc)
             if (
                 0 <= nr < rows
                 and 0 <= nc < cols
-                and nb not in visited
+                and nb not in seen
                 and grid[nr][nc] not in IMPASSABLE
             ):
-                neighbours.append(nb)
-
-        if not neighbours:
-            return None  # stuck — caller falls back to BFS
-
-        random.shuffle(neighbours)
-        nxt = neighbours[0]
-        visited.add(nxt)
-        path.append(nxt)
-        current = nxt
-
-    return path
+                seen.add(nb)
+                new_path = path + [nb]
+                if nb == end:
+                    return new_path
+                queue.append((nb, new_path))
+    return None
 
 
 def _make_path(grid: Grid, start: Node, end: Node, rows: int, cols: int) -> list[Node] | None:
-    """Random DFS first for diversity; BFS fallback if DFS fails."""
-    p = _random_dfs_path(grid, start, end, rows, cols)
-    return p if p is not None else _bfs_path(grid, start, end, rows, cols)
+    """Randomised BFS — always finds a path, always produces a different route."""
+    return _random_bfs_path(grid, start, end, rows, cols)
 
 
 # ── GA operators ───────────────────────────────────────────────────────────────
@@ -214,7 +203,7 @@ def _mutate(
     seg_start = path[i]
     seg_end   = path[j]
 
-    new_seg = _random_dfs_path(grid, seg_start, seg_end, rows, cols)
+    new_seg = _random_bfs_path(grid, seg_start, seg_end, rows, cols)
     if new_seg is None:
         new_seg = _bfs_path(grid, seg_start, seg_end, rows, cols)
     if new_seg is None:
@@ -326,38 +315,34 @@ def genetic_steps(
         )
         return
 
-    # ── Step 1 (lab): Initialise population ────────────────────────────────────
+    # ── Step 1 (lab): Initialise population — one chromosome at a time ──────────
     # Analogous to: population = [create_random_schedule() for _ in range(population_size)]
+    # Yields a frame after each addition so the cloud visibly grows on screen.
+
+    gen_width = len(str(generations))  # for zero-padded log messages
+
+    # Info frame: announce start before any paths are built
+    yield clone_grid(grid), "info", (
+        f"🧬 GENETIC ALGORITHM — INITIALIZING\n"
+        f"   Start      : {start}   End  : {end}   Grid : {rows}×{cols}\n"
+        f"   Population : {population_size} paths   Generations : {generations}   Mutation : {mutation_rate * 100:.0f}%\n"
+        f"   Building initial population one chromosome at a time..."
+    )
+
     population: list[list[Node]] = []
     while len(population) < population_size:
         p = _make_path(grid, start, end, rows, cols)
         if p is not None:
             population.append(p)
+            yield _build_cloud_grid(grid, population, [], population_size, champion_color=None), "step", (
+                f"🧬 INITIALIZING — Chromosome {len(population)} / {population_size}\n"
+                f"   Path length : {len(p)} cells   Cost : {_path_cost(grid, p):.1f}"
+            )
 
     fitness_scores = [_path_cost(grid, p) for p in population]
     best_idx  = fitness_scores.index(min(fitness_scores))
     best_path = list(population[best_idx])
     best_cost = fitness_scores[best_idx]
-
-    gen_width = len(str(generations))  # for zero-padded log messages
-
-    # Count hot cells (shared by ≥50% of the initial population)
-    init_freq: dict[Node, int] = {}
-    for path in population:
-        for cell in path:
-            init_freq[cell] = init_freq.get(cell, 0) + 1
-    init_hot = sum(1 for c in init_freq.values() if c >= population_size * 0.5)
-
-    # Gen-0 info frame: show only the initial population cloud — no champion
-    # overlay yet, so the pink final-answer colour is never shown from frame 0.
-    yield _build_cloud_grid(grid, population, best_path, population_size, champion_color=None), "info", (
-        f"🧬 GENETIC ALGORITHM — GEN 0 / {generations}\n"
-        f"   {_progress_bar(0, generations)}\n"
-        f"   Start  : {start}   End  : {end}   Grid : {rows}×{cols}\n"
-        f"   Pop    : {population_size} paths   Mutation : {mutation_rate * 100:.0f}%\n"
-        f"   ▶ Initial best cost : {best_cost:.1f}   ({len(best_path)} cells)\n"
-        f"   🔵 Explored cloud : {len(init_freq)} cells   🟠 Converging : {init_hot} cells"
-    )
 
     # ── Steps 2-5 (lab): Evolve ────────────────────────────────────────────────
     for generation in range(1, generations + 1):
@@ -412,9 +397,9 @@ def genetic_steps(
         hot_cells   = sum(1 for cnt in cloud_freq.values() if cnt >= population_size * 0.5)
         improve_tag = "✅ IMPROVED!" if marker == "✅" else "·"
 
-        # Stream one frame per generation — cloud + champion in purple (CURRENT).
-        # Purple signals "best so far, still evolving"; pink (PATH) only on done.
-        yield _build_cloud_grid(grid, population, best_path, population_size, champion_color=CURRENT), "step", (
+        # Stream one frame per generation — population cloud only, no champion.
+        # The best path is revealed only at the done frame (pink PATH colour).
+        yield _build_cloud_grid(grid, population, [], population_size, champion_color=None), "step", (
             f"🧬 GENETIC ALGORITHM — GEN {generation:{gen_width}} / {generations}   {improve_tag}\n"
             f"   {_progress_bar(generation, generations)}\n"
             f"   Gen best cost    : {gen_best_cost:.1f}\n"
